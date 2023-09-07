@@ -14,7 +14,7 @@
                         </div>
                     @endif
 
-                    {{ __('hello world!') }}
+                    {{ __('hallu world!') }}
                 </div>
             </div>
         </div>

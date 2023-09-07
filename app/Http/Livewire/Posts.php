@@ -29,7 +29,7 @@ class Posts extends Component
      *
      * @var array
      */
-    private function resetInputFields(){
+    public function resetInputFields(){
         $this->title = '';
         $this->body = '';
     }
@@ -49,8 +49,10 @@ class Posts extends Component
         Post::create($validatedData);
 
         //session()->flash('message', 'Post Created Successfully.');
+        $this->dispatchBrowserEvent('closeModal');
         $this->alertSuccess();
         $this->resetInputFields();
+
 
     }
 
@@ -103,6 +105,7 @@ class Posts extends Component
         $this->updateMode = false;
 
        // session()->flash('message', 'Post Updated Successfully.');
+       $this->dispatchBrowserEvent('closeModal');
        $this->alertSuccess();
         $this->resetInputFields();
 

@@ -4,12 +4,17 @@ namespace App\Http\Livewire;
 
 use Livewire\Component;
 use App\Models\Post;
+use Livewire\WithPagination;
+
 
 class Posts extends Component
 {
-
-    public $posts, $title, $body, $post_id;
+    use WithPagination;
+    public $title, $body, $post_id, $searchTerm;
+    public $sortColumn = 'created_at';
+    public $sortDirection = 'asc';
     public $updateMode = false;
+    protected $paginationTheme = 'bootstrap';
 
 
 
@@ -18,10 +23,54 @@ class Posts extends Component
      *
      * @var array
      */
+
+     public function sort($column)
+    {
+        $this->sortColumn = $column;
+        $this->sortDirection = $this->sortDirection == 'asc' ? 'desc' : 'asc';
+    }
+
+     private function headerConfig()
+    {
+        return [
+            'id' => 'ID',
+            'title' => 'Title',
+            'created_at' => [
+                'label' => 'Created at',
+                'func' => function($value) {
+                    return $value->diffForHumans();
+                }
+            ],
+            'updated_at' => [
+                'label' => 'Updated at',
+                'func' => function($value) {
+                    return $value->diffForHumans();
+                }
+            ],
+            'action' => 'Action',
+        ];
+    }
+
+     private function resultData()
+     {
+         return Post::where(function ($query) {
+
+             if($this->searchTerm != "") {
+                 $query->where('title', 'like', '%'.$this->searchTerm.'%');
+                 $query->orWhere('body', 'like', '%'.$this->searchTerm.'%');
+             }
+         })
+         ->orderBy($this->sortColumn, $this->sortDirection)
+         ->paginate(5);
+     }
+
+
     public function render()
     {
-        $this->posts = Post::all();
-        return view('livewire.posts');
+        return view('livewire.posts', [
+            'posts' => $this->resultData(),
+            'headers' =>$this->headerConfig()
+        ]);
     }
 
     /**
@@ -29,7 +78,7 @@ class Posts extends Component
      *
      * @var array
      */
-    private function resetInputFields(){
+    public function resetInputFields(){
         $this->title = '';
         $this->body = '';
     }
@@ -43,14 +92,16 @@ class Posts extends Component
     {
         $validatedData = $this->validate([
             'title' => 'required',
-            'body' => 'required|email',
+            'body' => 'required',
         ]);
 
         Post::create($validatedData);
 
         //session()->flash('message', 'Post Created Successfully.');
+        $this->dispatchBrowserEvent('closeModal');
         $this->alertSuccess();
         $this->resetInputFields();
+
 
     }
 
@@ -103,6 +154,7 @@ class Posts extends Component
         $this->updateMode = false;
 
        // session()->flash('message', 'Post Updated Successfully.');
+       $this->dispatchBrowserEvent('closeModal');
        $this->alertSuccess();
         $this->resetInputFields();
 

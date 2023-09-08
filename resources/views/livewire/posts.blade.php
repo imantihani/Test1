@@ -6,42 +6,61 @@
         </div>
     @endif
 
-    @if($updateMode)
         @include('livewire.update')
-    @else
         @include('livewire.create')
-    @endif
 
+        <div class="row">
+            <div class="col-md-6"> </div>
+            <div class="col-md-6">
+        <input class="form-control search-input mt-3" wire:model.debounce.500ms="searchTerm" type="text" placeholder="Search..."/>
+            </div>
+        </div>
     <table class="table table-bordered mt-5">
         <thead>
-            <tr>
-                <th>No.</th>
-                <th>Title</th>
-                <th>Body</th>
-                <th>Created</th>
-                <th>Updated</th>
-                <th width="150px">Action</th>
-            </tr>
+            @foreach ($headers as $key => $value)
+                <th width="5%" style="cursor: pointer" wire:click="sort('{{ $key }}')">
+                    @if($sortColumn == $key)
+                        <span>{!! $sortDirection == 'asc' ? '&#8659;':'&#8657;' !!}</span>
+                    @endif
+                    {{ is_array($value) ? $value['label'] : $value }}
+                </th>
+            @endforeach
         </thead>
         <tbody>
-            @foreach($posts as $key => $post)
-            <tr>
-                <td>{{ $key+1}}</td>
-                <td>{{ $post->title }}</td>
-                <td>{{ $post->body }}</td>
-                <td>{{ $post->created_at }}</td>
-                <td>{{ $post->updated_at }}</td>
+            @if(count($posts))
+            @foreach ($posts as $item)
+                <tr>
+                    @foreach ($headers as $key => $value)
+                    @if($key=='action')
+                    <td>
+                        <button wire:click="edit({{ $item->id }})" type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                            Edit
+                        </button>
 
-                <td>
-                <button wire:click="edit({{ $post->id }})" class="btn btn-primary btn-sm">Edit</button>
-                    <button wire:click="alertConfirm({{ $post->id }})" class="btn btn-danger btn-sm">Delete</button>
-                </td>
-            </tr>
+                        <button wire:click="alertConfirm({{ $item->id }})" class="btn btn-danger btn-sm">Delete</button>
+                    </td>
+                   @else
+                        <td>
+                            {!! is_array($value) ? $value['func']($item->$key) : $item->$key !!}
+                        </td>
+                        @endif
+                    @endforeach
+                </tr>
             @endforeach
+        @else
+            <tr><td colspan="{{ count($headers) }}"><h2>No Results Found!</h2></td></tr>
+        @endif
+
         </tbody>
     </table>
+    {{ $posts->links() }}
     @push('js')
     <script>
+
+window.addEventListener('closeModal', event => {
+            document.querySelector('#exampleModal').style.display = "none";
+            document.querySelector('.modal-backdrop').remove();
+        })
 
         window.addEventListener('swal:modal', event => {
             Swal.fire({
@@ -70,6 +89,12 @@
             });
         });
          </script>
+
+<script type="text/javascript">
+    window.livewire.on('PostStore', () => {
+        $('#exampleModal').modal('hide');
+    });
+</script>
 
     @endpush
 </div>
